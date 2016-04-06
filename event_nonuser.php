@@ -104,9 +104,9 @@ $end_at = strtotime($event["end_at"]);
                 <li>標籤：<?php echo $event["tags"]; ?></li>
               </ul>
 
-              <p><h3>＝隊伍組成＝</h3> *為必要組成</p>
+              <p><h3>＝開團條件＝</h3></p>
               <ul>
-                <li>*關主：<a href="user.php?id=<?php echo $owner["id"]; ?>"><?php echo $owner["nickname"]; ?></a></li>
+                <li>關主：<a href="user.php?id=<?php echo $owner["id"]; ?>"><?php echo $owner["nickname"]; ?></a></li>
                 <?php 
                 $pcount=1;  //已經印多少職缺出來
                 foreach($jobmusthave as $job){  //印出必要任務
@@ -136,75 +136,28 @@ $end_at = strtotime($event["end_at"]);
                   if (!$match)
                     echo "<li>".$job."：<a href=\"javascript: $('#job').val('".$job."'); $(document).scrollTop( $('#join_now').offset().top ); void(0)\">[＋]</a></li>\n";
                   $pcount++;
-                }
-                foreach($jobwanted as $job){   //印出想要任務
-                  if ($job == null || trim($job)=="")
-                    continue;
-                  //find title & joined
-                  $match = false;
-                  foreach($members as $key => $value){
-                    if(!isset($value["marked"]) && $value["job"]==$job){
-                      if ($value["user_id"]!=-1){
-                        echo "<li>".$value["job"]."：<a href=\"user.php?id=".$value["user_id"]."\">".$value["user_nickname"]."</a>";
-                        echo " <a href='event_leave.php?event_id=".$event["id"]."&&job=".$value["job"]."'>[-]</a>";
-                      }
-                      else{
-                        echo "<li>".$value["job"]."：".$value["user_nickname"];
-                        echo " <a href='event_leave.php?dummy=".$value["user_nickname"]."&event_id=".$event["id"]."&&job=".$value["job"]."'>[-]</a>";
-                      }
-                      if (isset($value["description"]) && $value["description"]!=null && trim($value["description"])!="" ){
-                        echo "<br>".$value["description"];
-                      }
-                      echo "</li>\n";
-                      $members[$key]["marked"]=true;
-                      $match=true;
-                      break;
-                    }
-                  }
-                  if (!$match)
-                    echo "<li>".$job."：<a href=\"javascript: $('#job').val('".$job."'); $(document).scrollTop( $('#join_now').offset().top ); void(0)\">[＋]</a></li>\n";
-                  $pcount++;
-                }
-                foreach($members as $value){  //印出剩下有報名的
-                  if(!isset($value["marked"])){
-                    if ($value["user_id"]!=-1){
-                      echo "<li>".$value["job"]."：<a href=\"user.php?id=".$value["user_id"]."\">".$value["user_nickname"]."</a>";
-                      echo " <a href='event_leave.php?event_id=".$event["id"]."&&job=".$value["job"]."'>[-]</a>";
-                    }
-                    else{
-                      echo "<li>".$value["job"]."：".$value["user_nickname"];
-                      echo " <a href='event_leave.php?dummy=".$value["user_nickname"]."&event_id=".$event["id"]."&&job=".$value["job"]."'>[-]</a>";
-                    }
-                    if (isset($value["description"]) && $value["description"]!=null && trim($value["description"])!="" ){
-                      echo "<br>".$value["description"];
-                    }
-                    echo "</li>\n";
-                    $value["marked"]=true;
-                  }
-                }  ?>
+                } ?>
               </ul>
 
-              <p><h3>＝加入隊伍＝</h3><a id="join_now"></a></p>
-              <form action="event_join_nonuser.php" method="GET">
-              <input type="text" id="nickname" name="nickname" placeholder="暱稱必填" class="form-control"><br>
-              任務：<select id="job" name="job">
-                <?php foreach($default_jobs_a as $value){
-                  echo "<option value=\"".$value."\">".$value."</option>\n";
-                } ?>
-              </select>
-              <input type="text" id="description" name="description" placeholder="描述一下" class="form-control"><br>
-              <input type="hidden" id="event_id" name="event_id" value="<?php echo $event["id"]; ?>"><br>
-              <button type=\"submit\" id=\"event_join_btn\" class=\"btn btn-success\">Join now!</button>
-              </form>
             </div>
           </div>
 
 
           <div class="col-md-9">
+            <div id="event_status">
+              隊伍狀態：
+              <?php if(event_readytogo($event)){ ?>
+              已經成團
+              <?php }else{ ?>
+              還缺人喔～
+              <?php } ?>
+            </div>
+
             <div id="main_desc">
               <h2>簡介：</h2><br>
               <?php echo $event["description"]; ?>
             </div>
+
             <?php if (isset($updates) && $updates!=null) { ?>
             <div id="updates">
               <h2>更新：</h2><br>
@@ -215,6 +168,7 @@ $end_at = strtotime($event["end_at"]);
               } ?>
             </div>
             <?php } ?>
+
             <div id="members">
               <h2>目前隊伍組成：</h2><br>
               <table data-toggle="table" data-url="event_members.php?id=<?php echo $event["id"]; ?>" data-height="299" data-sort-name="name" data-sort-order="desc">
@@ -226,18 +180,36 @@ $end_at = strtotime($event["end_at"]);
                    </tr>
                </thead>
               </table>
+
+              <p>加入隊伍：<a id="join_now"></a></p>
+              <div>
+                <form action="event_join_nonuser.php" method="GET">
+                <input type="text" id="nickname" name="nickname" placeholder="暱稱必填" class="form-control" style="width: 250px;">
+                任務：<select id="job" name="job">
+                  <?php foreach($default_jobs_a as $value){
+                    echo "<option value=\"".$value."\">".$value."</option>\n";
+                  } ?>
+                </select>
+                <input type="text" id="description" name="description" placeholder="描述一下" class="form-control" style="width: 250px;">
+                <input type="hidden" id="event_id" name="event_id" value="<?php echo $event["id"]; ?>">
+                <button type=\"submit\" id=\"event_join_btn\" class=\"btn btn-success\">Join now!</button>
+                </form>
+              </div>
             </div>
+
             <div id="maps">
               <h2>地圖：</h2><br>
               <iframe width="600" height="450" frameborder="0" style="border:0"
 src="https://www.google.com/maps/embed/v1/place?q=<?php echo $event["address"]; ?>&key=AIzaSyCqmbzf3UKLc1UEs_-9k5099A9GPsWE2gc" allowfullscreen></iframe>
             </div>
+
             <div id="main_pics">
               <h2>照片：</h2><br>
               <?php foreach($main_pics as $value){
                 echo "<img src='".$value."' width='600' />";
               } ?>
             </div>
+            
             <div id="user_pics">
               <h2>活動花絮：</h2><br>
             </div>

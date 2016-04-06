@@ -290,6 +290,23 @@ function event_leave_nonuser($event_id, $job, $nickname){
     //TODO: send notify to user
 	return true;
 }
+function event_readytogo($event){
+	if ($event==null || $event["updates"]==null || trim($event["updates"])==""){
+		return null;
+	}
+	$musthave = $preg_split( "/,+/", $event["job_must_have"]);
+	$members = json_decode($event["json_members"]);
+	foreach($musthave as $v){
+		$match = false;
+		foreach($members as $m){
+			if ($m["job"]==$v)
+				$match = true;
+		}
+		if (!$match)
+			return false;
+	}
+	return true;
+}
 function event_getupdates($id){
 	$event = event_get($id);
 	if ($event==null || $event["updates"]==null || trim($event["updates"])==""){
